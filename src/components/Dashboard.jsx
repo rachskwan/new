@@ -2,21 +2,28 @@ import { useState, useEffect } from 'react';
 import { getAllCompanions } from '../data/companions';
 import CommunityInsights from './CommunityInsights';
 import { ShareButton } from './ShareSnapshot';
+import SpiderChart from './SpiderChart';
 
 export default function Dashboard({ responses, healthType, isFirstCheckIn, onViewQuests, onReflect, onExploreBlood, onAddQuest }) {
   const companions = getAllCompanions();
   const [showCommunity, setShowCommunity] = useState(false);
-  const [revealStage, setRevealStage] = useState(isFirstCheckIn ? 0 : -1); // -1 = no reveal, 0-3 = reveal stages
+  // Show reveal for first-time users OR whenever we have a healthType (fresh quiz completion)
+  const shouldShowReveal = healthType && isFirstCheckIn;
+  const [revealStage, setRevealStage] = useState(shouldShowReveal ? 0 : -1); // -1 = no reveal, 0-3 = reveal stages
+  const [revealComplete, setRevealComplete] = useState(false);
 
-  // Animate the reveal for first-time users
+  // Animate the reveal
   useEffect(() => {
-    if (isFirstCheckIn && healthType && revealStage >= 0 && revealStage < 3) {
+    if (shouldShowReveal && revealStage >= 0 && revealStage < 3) {
       const timer = setTimeout(() => {
         setRevealStage(prev => prev + 1);
       }, revealStage === 0 ? 800 : 600);
       return () => clearTimeout(timer);
     }
-  }, [isFirstCheckIn, healthType, revealStage]);
+    if (revealStage >= 3) {
+      setRevealComplete(true);
+    }
+  }, [shouldShowReveal, revealStage]);
 
   // Calculate scores for each companion based on their answers
   const scores = companions.map(companion => {
@@ -49,7 +56,7 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
     <div className="min-h-screen bg-amber-50/40 px-6 py-12">
       <div className="max-w-2xl mx-auto">
         {/* First-time Health Type Reveal */}
-        {isFirstCheckIn && healthType && revealStage >= 0 && (
+        {shouldShowReveal && revealStage >= 0 && (
           <div className="mb-10">
             <div className={`text-center transition-all duration-700 ${revealStage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
               <p className="text-sm text-gray-400 mb-4">your check-in is complete</p>
@@ -99,6 +106,12 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
                 </div>
               </div>
 
+              {/* Spider Chart - shows after reveal */}
+              <div className={`mt-8 bg-white rounded-2xl p-6 shadow-lg transition-all duration-700 delay-700 ${revealStage >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+                <h3 className="text-center text-sm font-medium text-gray-600 mb-4">Your Wellness Snapshot</h3>
+                <SpiderChart companions={scores} healthType={healthType} size={280} />
+              </div>
+
               {/* Skip/Continue hint */}
               <p className={`text-xs text-gray-400 mt-4 transition-opacity duration-500 ${revealStage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                 Scroll down to see what your companions noticed
@@ -125,6 +138,13 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
             This isn't a score — it's a snapshot of where you're at right now.
           </p>
         </div>
+
+        {/* Spider Chart for returning users - smaller, subtle */}
+        {!shouldShowReveal && healthType && (
+          <div className="mb-8 bg-white rounded-xl p-4 border border-gray-200">
+            <SpiderChart companions={scores} healthType={healthType} size={220} />
+          </div>
+        )}
 
         {/* Needs Attention Section */}
         <div className="mb-8">
