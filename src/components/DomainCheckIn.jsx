@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import { BiomarkerList } from './BiomarkerTag';
 
 export default function DomainCheckIn({ companion, onComplete, onBack, currentIndex, totalCompanions }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [showCuriosityNudge, setShowCuriosityNudge] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [sharedQuest, setSharedQuest] = useState(null);
 
   const questions = companion.questions;
   const question = questions[currentQuestion];
   const progress = ((currentIndex * questions.length + currentQuestion) / (totalCompanions * questions.length)) * 100;
-
-  // Show curiosity nudge after the last question for this companion
-  const isLastQuestion = currentQuestion === questions.length - 1;
 
   const handleAnswer = (questionId, value) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -36,28 +29,6 @@ export default function DomainCheckIn({ companion, onComplete, onBack, currentIn
   };
 
   const canProceed = answers[question.id] !== undefined;
-
-  const handleShareQuest = async (quest) => {
-    const shareText = `${companion.emoji} ${companion.name} the ${companion.animal} suggests: "${quest.text}" - What micro-quest are you trying this week?`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Micro-quest from ${companion.name}`,
-          text: shareText,
-        });
-        setSharedQuest(quest.text);
-        setTimeout(() => setSharedQuest(null), 3000);
-      } catch (err) {
-        // User cancelled or error
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(shareText);
-      setSharedQuest(quest.text);
-      setTimeout(() => setSharedQuest(null), 3000);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-amber-50/40 flex flex-col">
@@ -112,78 +83,6 @@ export default function DomainCheckIn({ companion, onComplete, onBack, currentIn
               />
             )}
           </div>
-
-          {/* Curiosity Nudge - shows after last question */}
-          {isLastQuestion && canProceed && (
-            <div className="mb-4">
-              <button
-                onClick={() => setShowCuriosityNudge(!showCuriosityNudge)}
-                className="w-full text-left"
-              >
-                <div className={`${companion.bgLight} rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors`}>
-                  <div className="flex items-start gap-3">
-                    <span className="text-lg">{companion.emoji}</span>
-                    <div>
-                      <p className="text-sm text-gray-600">
-                        {companion.curiosityNudge.text}
-                      </p>
-                      <p className="text-sm text-gray-800 font-medium mt-2 flex items-center gap-1">
-                        {companion.curiosityNudge.cta}
-                        <span className="text-gray-400">{showCuriosityNudge ? '▲' : '▼'}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              {showCuriosityNudge && (
-                <div className="mt-3 space-y-3">
-                  {/* Micro-quests with share */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-400 mb-3">Try a micro-quest from {companion.name}:</p>
-                    <div className="space-y-2">
-                      {companion.microQuests.map((quest, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between gap-2 p-2 rounded-lg bg-gray-50"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{quest.icon}</span>
-                            <span className="text-sm text-gray-700">{quest.text}</span>
-                          </div>
-                          <button
-                            onClick={() => handleShareQuest(quest)}
-                            className={`text-xs px-2 py-1 rounded-full transition-all ${
-                              sharedQuest === quest.text
-                                ? 'bg-emerald-100 text-emerald-600'
-                                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                            }`}
-                          >
-                            {sharedQuest === quest.text ? 'Shared!' : 'Share'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Biomarkers */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-400 mb-2">Related biomarkers (hover to learn more)</p>
-                    <div className="mb-4">
-                      <BiomarkerList biomarkers={companion.biomarkers} />
-                    </div>
-                    <a
-                      href="#dalton"
-                      onClick={(e) => e.preventDefault()}
-                      className="text-sm text-gray-700 underline hover:text-gray-900"
-                    >
-                      Learn more about Dalton Personal Blood Test
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Navigation */}
           <div className="flex justify-between">
