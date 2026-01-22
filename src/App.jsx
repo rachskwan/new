@@ -9,7 +9,8 @@ import {
   getUserCheckInHistory,
   getUserCompanionScores,
   getUserStats,
-  updateActiveQuests
+  updateActiveQuests,
+  updateGardenElements
 } from './utils/auth';
 
 // Components
@@ -39,6 +40,7 @@ function App() {
   const [pendingCheckIn, setPendingCheckIn] = useState(null);
   const [activeQuests, setActiveQuests] = useState([]); // {id, companionId, text, icon, status: 'active'|'completed', addedAt}
   const [healthType, setHealthType] = useState(null); // User's playful health type
+  const [gardenElements, setGardenElements] = useState([]); // Nature elements that grow when quests complete
 
   const companions = getAllCompanions();
   const currentCompanion = companions[currentCompanionIndex];
@@ -59,10 +61,12 @@ function App() {
     const scores = userData.companionScores || [];
     const quests = userData.activeQuests || [];
     const savedType = userData.healthType || null;
+    const garden = userData.gardenElements || [];
 
     setCheckInHistory(history);
     setActiveQuests(quests);
     setHealthType(savedType);
+    setGardenElements(garden);
     if (scores.length > 0) {
       setSortedCompanions(scores);
       // Recalculate type if not saved
@@ -200,13 +204,63 @@ function App() {
     });
   };
 
+  // Nature elements that can grow when quests are completed
+  const natureElements = [
+    { emoji: '🌸', name: 'Cherry Blossom', type: 'flower' },
+    { emoji: '🌺', name: 'Hibiscus', type: 'flower' },
+    { emoji: '🌻', name: 'Sunflower', type: 'flower' },
+    { emoji: '🌷', name: 'Tulip', type: 'flower' },
+    { emoji: '🌹', name: 'Rose', type: 'flower' },
+    { emoji: '💐', name: 'Bouquet', type: 'flower' },
+    { emoji: '🪻', name: 'Hyacinth', type: 'flower' },
+    { emoji: '🌼', name: 'Daisy', type: 'flower' },
+    { emoji: '🌱', name: 'Seedling', type: 'plant' },
+    { emoji: '🌿', name: 'Herb', type: 'plant' },
+    { emoji: '☘️', name: 'Clover', type: 'plant' },
+    { emoji: '🍀', name: 'Four Leaf Clover', type: 'plant' },
+    { emoji: '🌲', name: 'Pine Tree', type: 'tree' },
+    { emoji: '🌳', name: 'Tree', type: 'tree' },
+    { emoji: '🌴', name: 'Palm Tree', type: 'tree' },
+    { emoji: '🎋', name: 'Bamboo', type: 'tree' },
+    { emoji: '🍄', name: 'Mushroom', type: 'fungi' },
+    { emoji: '🦋', name: 'Butterfly', type: 'creature' },
+    { emoji: '🐝', name: 'Bee', type: 'creature' },
+    { emoji: '🐞', name: 'Ladybug', type: 'creature' },
+  ];
+
   // Complete a quest
   const handleCompleteQuest = (questId) => {
+    const quest = activeQuests.find(q => q.id === questId);
     const updatedQuests = activeQuests.map(q =>
       q.id === questId ? { ...q, status: 'completed', completedAt: new Date().toISOString() } : q
     );
     setActiveQuests(updatedQuests);
-    // Persist to user storage
+
+    // Add a nature element to the garden!
+    if (quest) {
+      const randomElement = natureElements[Math.floor(Math.random() * natureElements.length)];
+      const newGardenElement = {
+        id: `garden-${Date.now()}`,
+        ...randomElement,
+        companionId: quest.companionId,
+        questText: quest.text,
+        plantedAt: new Date().toISOString(),
+        // Random position offset from companion
+        offsetX: (Math.random() - 0.5) * 30,
+        offsetY: (Math.random() - 0.5) * 20,
+      };
+
+      setGardenElements(prev => {
+        const updated = [...prev, newGardenElement];
+        // Persist to user storage
+        if (user) {
+          updateGardenElements(updated);
+        }
+        return updated;
+      });
+    }
+
+    // Persist quests to user storage
     if (user) {
       updateActiveQuests(updatedQuests);
     }
@@ -355,6 +409,7 @@ function App() {
           user={user}
           activeQuests={activeQuests}
           healthType={healthType}
+          gardenElements={gardenElements}
           onStartCheckIn={() => setScreen('onboarding')}
           onViewQuests={handleViewQuests}
           onExploreBlood={handleExploreBlood}

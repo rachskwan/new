@@ -21,6 +21,7 @@ export default function CompanionMap({
   user,
   activeQuests = [],
   healthType,
+  gardenElements = [],
   onStartCheckIn,
   onViewQuests,
   onExploreBlood,
@@ -302,6 +303,43 @@ export default function CompanionMap({
             </button>
           );
         })}
+
+        {/* Garden elements - nature that grew from completed quests */}
+        {gardenElements.map((element, i) => {
+          const pos = mapPositions[element.companionId];
+          if (!pos) return null;
+
+          return (
+            <div
+              key={element.id}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-grow-in"
+              style={{
+                left: `${Math.min(95, Math.max(5, pos.x + element.offsetX))}%`,
+                top: `${Math.min(95, Math.max(5, pos.y + element.offsetY))}%`,
+                animationDelay: `${i * 100}ms`,
+                zIndex: 5
+              }}
+              title={`${element.name} - from: ${element.questText}`}
+            >
+              <span className="text-2xl drop-shadow-sm hover:scale-125 transition-transform cursor-default">
+                {element.emoji}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Garden count badge */}
+        {gardenElements.length > 0 && (
+          <div className="absolute top-4 right-4 bg-white/90 rounded-xl px-3 py-2 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🌸</span>
+              <div>
+                <p className="text-xs font-medium text-gray-800">{gardenElements.length} growing</p>
+                <p className="text-xs text-gray-500">in your garden</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Global view toggle */}
         {hasCompletedCheckIn && (

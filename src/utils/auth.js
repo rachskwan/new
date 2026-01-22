@@ -135,6 +135,11 @@ export function updateActiveQuests(quests) {
   return updateUser({ activeQuests: quests });
 }
 
+// Update garden elements for current user
+export function updateGardenElements(elements) {
+  return updateUser({ gardenElements: elements });
+}
+
 // Get user's check-in history
 export function getUserCheckInHistory() {
   const user = getCurrentUser();
