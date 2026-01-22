@@ -1,11 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllCompanions } from '../data/companions';
 import CommunityInsights from './CommunityInsights';
 import { ShareButton } from './ShareSnapshot';
 
-export default function Dashboard({ responses, onViewQuests, onReflect, onExploreBlood, onAddQuest }) {
+export default function Dashboard({ responses, healthType, isFirstCheckIn, onViewQuests, onReflect, onExploreBlood, onAddQuest }) {
   const companions = getAllCompanions();
   const [showCommunity, setShowCommunity] = useState(false);
+  const [revealStage, setRevealStage] = useState(isFirstCheckIn ? 0 : -1); // -1 = no reveal, 0-3 = reveal stages
+
+  // Animate the reveal for first-time users
+  useEffect(() => {
+    if (isFirstCheckIn && healthType && revealStage >= 0 && revealStage < 3) {
+      const timer = setTimeout(() => {
+        setRevealStage(prev => prev + 1);
+      }, revealStage === 0 ? 800 : 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isFirstCheckIn, healthType, revealStage]);
 
   // Calculate scores for each companion based on their answers
   const scores = companions.map(companion => {
@@ -37,9 +48,76 @@ export default function Dashboard({ responses, onViewQuests, onReflect, onExplor
   return (
     <div className="min-h-screen bg-amber-50/40 px-6 py-12">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
+        {/* First-time Health Type Reveal */}
+        {isFirstCheckIn && healthType && revealStage >= 0 && (
+          <div className="mb-10">
+            <div className={`text-center transition-all duration-700 ${revealStage >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+              <p className="text-sm text-gray-400 mb-4">your check-in is complete</p>
+
+              {/* Reveal animation container */}
+              <div className={`relative transition-all duration-700 ${revealStage >= 1 ? 'scale-100' : 'scale-90'}`}>
+                {/* Glow effect */}
+                <div className={`absolute inset-0 rounded-3xl blur-2xl transition-opacity duration-1000 ${revealStage >= 2 ? 'opacity-60' : 'opacity-0'}`}
+                  style={{ background: `linear-gradient(135deg, ${healthType.gradient?.includes('emerald') ? '#6ee7b7' : healthType.gradient?.includes('amber') ? '#fcd34d' : healthType.gradient?.includes('violet') ? '#c4b5fd' : healthType.gradient?.includes('rose') ? '#fda4af' : healthType.gradient?.includes('cyan') ? '#67e8f9' : '#fcd34d'} 0%, transparent 70%)` }}
+                />
+
+                {/* Card */}
+                <div className={`relative bg-gradient-to-br ${healthType.gradient} rounded-3xl p-8 text-white shadow-xl`}>
+                  {/* Sparkles */}
+                  {revealStage >= 2 && (
+                    <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+                      {[...Array(8)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-1 h-1 bg-white rounded-full animate-ping"
+                          style={{
+                            left: `${15 + (i * 10)}%`,
+                            top: `${20 + (i % 3) * 25}%`,
+                            animationDelay: `${i * 150}ms`,
+                            animationDuration: '1.5s'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <p className={`text-white/70 text-sm mb-3 transition-all duration-500 ${revealStage >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    we discovered your health type...
+                  </p>
+
+                  <div className={`transition-all duration-700 delay-300 ${revealStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <span className="text-6xl mb-4 block">{healthType.emoji}</span>
+                    <h1 className="text-3xl font-bold mb-2">{healthType.name}</h1>
+                    <p className="text-white/80 italic text-lg">"{healthType.tagline}"</p>
+                  </div>
+
+                  <div className={`mt-6 pt-6 border-t border-white/20 transition-all duration-500 delay-500 ${revealStage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      {healthType.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Skip/Continue hint */}
+              <p className={`text-xs text-gray-400 mt-4 transition-opacity duration-500 ${revealStage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                Scroll down to see what your companions noticed
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Header - show different version for returning users */}
         <div className="text-center mb-10">
-          <p className="text-sm text-gray-400 mb-2">your check-in is complete</p>
+          {!isFirstCheckIn && healthType && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-gray-200 mb-4">
+              <span className="text-lg">{healthType.emoji}</span>
+              <span className="text-sm text-gray-600">{healthType.name}</span>
+            </div>
+          )}
+          {(!isFirstCheckIn || !healthType) && (
+            <p className="text-sm text-gray-400 mb-2">your check-in is complete</p>
+          )}
           <h1 className="text-2xl font-semibold text-gray-800 mb-3">
             Here's what your companions noticed
           </h1>

@@ -382,6 +382,8 @@ function App() {
       {screen === 'dashboard' && (
         <Dashboard
           responses={responses}
+          healthType={healthType}
+          isFirstCheckIn={checkInHistory.length === 0}
           onViewQuests={handleViewQuests}
           onExploreBlood={handleExploreBlood}
           onReflect={handleReflect}
