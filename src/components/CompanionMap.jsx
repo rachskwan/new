@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getAllCompanions, getMoodEmoji } from '../data/companions';
 import CompanionPopup from './CompanionPopup';
 import { communityStats, getGlobalQuests } from '../data/communityData';
+import { getVisitorGiftsAsGardenElements, getShareableLink, questReactions } from '../data/visitors';
 import MapShareCard from './MapShareCard';
 
 // Map positions for each companion - creates a forest/nature scene
@@ -22,6 +23,8 @@ export default function CompanionMap({
   activeQuests = [],
   healthType,
   gardenElements = [],
+  visitors = [],
+  forestCode = '',
   onStartCheckIn,
   onViewQuests,
   onExploreBlood,
@@ -37,11 +40,14 @@ export default function CompanionMap({
   const [showTypeCard, setShowTypeCard] = useState(false);
   const [questFilter, setQuestFilter] = useState('all'); // 'all', 'active', 'completed'
   const [showAddQuest, setShowAddQuest] = useState(false);
-  const [showGlobalView, setShowGlobalView] = useState(false);
+  const [viewMode, setViewMode] = useState('default'); // 'default', 'global', 'friends'
   const [selectedGlobalQuest, setSelectedGlobalQuest] = useState(null);
   const [selectedGardenElement, setSelectedGardenElement] = useState(null);
+  const [selectedVisitorGift, setSelectedVisitorGift] = useState(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const companions = getAllCompanions();
   const globalQuests = getGlobalQuests();
+  const visitorGifts = getVisitorGiftsAsGardenElements(visitors);
 
   // Group global quests by companion
   const globalQuestsByCompanion = globalQuests.reduce((acc, quest) => {
@@ -346,32 +352,50 @@ export default function CompanionMap({
           </div>
         )}
 
-        {/* Global view toggle */}
+        {/* 3-way view toggle: Default / Global / Friends */}
         {hasCompletedCheckIn && (
-          <button
-            onClick={() => setShowGlobalView(!showGlobalView)}
-            className={`absolute bottom-4 right-4 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm border transition-all hover:scale-105 ${
-              showGlobalView
-                ? 'bg-indigo-500 text-white border-indigo-600'
-                : 'bg-white/90 hover:bg-white border-gray-200'
-            }`}
-          >
-            <div className="flex -space-x-1">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white' : 'bg-emerald-400'}`} />
-              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white/80' : 'bg-blue-400'}`} style={{ animationDelay: '200ms' }} />
-              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white/60' : 'bg-purple-400'}`} style={{ animationDelay: '400ms' }} />
-            </div>
-            <span className="text-xs">{showGlobalView ? 'Hide global' : `${communityStats.activeThisWeek} exploring`}</span>
-          </button>
+          <div className="absolute bottom-4 right-4 bg-white/95 rounded-full p-1 shadow-md border border-gray-200 flex gap-1">
+            <button
+              onClick={() => setViewMode('default')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                viewMode === 'default'
+                  ? 'bg-gray-800 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              My Forest
+            </button>
+            <button
+              onClick={() => setViewMode('global')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                viewMode === 'global'
+                  ? 'bg-indigo-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+              Global
+            </button>
+            <button
+              onClick={() => setViewMode('friends')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                viewMode === 'friends'
+                  ? 'bg-pink-500 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>👋</span>
+              Friends {visitors.length > 0 && `(${visitors.length})`}
+            </button>
+          </div>
         )}
 
         {/* Global quests floating on map */}
-        {showGlobalView && (
+        {viewMode === 'global' && (
           <div className="absolute inset-0 pointer-events-none">
             {globalQuests.slice(0, 8).map((quest, i) => {
               const companion = companions.find(c => c.id === quest.companionId);
               const pos = mapPositions[quest.companionId];
-              // Offset each quest slightly from the companion position
               const offsetX = ((i % 3) - 1) * 12;
               const offsetY = (Math.floor(i / 3) - 1) * 8;
 
@@ -398,13 +422,57 @@ export default function CompanionMap({
           </div>
         )}
 
+        {/* Friends view - visitor gifts floating on map */}
+        {viewMode === 'friends' && (
+          <div className="absolute inset-0 pointer-events-none">
+            {visitorGifts.map((gift, i) => {
+              const pos = mapPositions[gift.companionId];
+              if (!pos) return null;
+
+              return (
+                <button
+                  key={gift.id}
+                  onClick={() => setSelectedVisitorGift(gift)}
+                  className="absolute pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 animate-float hover:scale-125 transition-transform"
+                  style={{
+                    left: `${Math.min(90, Math.max(10, pos.x + gift.offsetX))}%`,
+                    top: `${Math.min(90, Math.max(10, pos.y + gift.offsetY))}%`,
+                    animationDelay: `${i * 150}ms`,
+                    zIndex: 6
+                  }}
+                >
+                  <div className="relative">
+                    <span className="text-3xl drop-shadow-md">{gift.emoji}</span>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-xs shadow-sm border border-pink-200">
+                      {gift.visitorAvatar}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Invite friends button when in friends view */}
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="absolute pointer-events-auto top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl px-4 py-3 shadow-lg border-2 border-dashed border-pink-300 hover:border-pink-400 transition-all hover:scale-105"
+            >
+              <div className="text-center">
+                <span className="text-2xl block mb-1">💌</span>
+                <p className="text-sm font-medium text-gray-700">Invite friends</p>
+                <p className="text-xs text-gray-500">Share your forest link</p>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* Share map button */}
         {hasCompletedCheckIn && (
           <button
-            onClick={() => setShowMapShare(true)}
+            onClick={() => setShowInviteModal(true)}
             className="absolute bottom-4 left-4 bg-white/90 hover:bg-white rounded-full px-4 py-2 flex items-center gap-2 shadow-sm border border-gray-200 transition-all hover:scale-105"
           >
-            <span className="text-sm">Share forest</span>
+            <span>💌</span>
+            <span className="text-sm">Invite friends</span>
           </button>
         )}
 
@@ -507,6 +575,7 @@ export default function CompanionMap({
         <QuestPopup
           quest={selectedQuest}
           companion={enrichedCompanions.find(c => c.id === selectedQuest.companionId)}
+          visitors={visitors}
           onClose={() => setSelectedQuest(null)}
           onComplete={() => {
             onCompleteQuest?.(selectedQuest.id);
@@ -560,7 +629,7 @@ export default function CompanionMap({
               inspiredBy: selectedGlobalQuest.user
             });
             setSelectedGlobalQuest(null);
-            setShowGlobalView(false);
+            setViewMode('default');
           }}
         />
       )}
@@ -571,6 +640,23 @@ export default function CompanionMap({
           element={selectedGardenElement}
           companion={companions.find(c => c.id === selectedGardenElement.companionId)}
           onClose={() => setSelectedGardenElement(null)}
+        />
+      )}
+
+      {/* Visitor Gift Popup - shows who left a gift */}
+      {selectedVisitorGift && (
+        <VisitorGiftPopup
+          gift={selectedVisitorGift}
+          onClose={() => setSelectedVisitorGift(null)}
+        />
+      )}
+
+      {/* Invite Friends Modal */}
+      {showInviteModal && (
+        <InviteModal
+          forestCode={forestCode}
+          userName={user?.name}
+          onClose={() => setShowInviteModal(false)}
         />
       )}
     </div>
@@ -674,8 +760,22 @@ function HealthTypeCard({ healthType, companions, user, onClose }) {
 }
 
 // Quest popup component
-function QuestPopup({ quest, companion, onClose, onComplete, onRemove }) {
+function QuestPopup({ quest, companion, visitors = [], onClose, onComplete, onRemove }) {
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Get reactions for this quest from visitors
+  const questReactions = [];
+  visitors.forEach(visitor => {
+    visitor.reactions?.forEach(r => {
+      if (r.questId === quest.id) {
+        questReactions.push({
+          ...r,
+          visitorName: visitor.name,
+          visitorAvatar: visitor.avatar
+        });
+      }
+    });
+  });
 
   const handleComplete = () => {
     setShowConfetti(true);
@@ -745,6 +845,25 @@ function QuestPopup({ quest, companion, onClose, onComplete, onRemove }) {
               </span>
             )}
           </div>
+
+          {/* Friend reactions */}
+          {questReactions.length > 0 && (
+            <div className="mb-4 p-3 bg-pink-50 rounded-xl">
+              <p className="text-xs text-pink-600 font-medium mb-2">Friends cheering you on!</p>
+              <div className="flex flex-wrap gap-2">
+                {questReactions.map((reaction, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-1 bg-white px-2 py-1 rounded-full shadow-sm"
+                    title={`${reaction.visitorName} sent ${reaction.reaction?.label || 'encouragement'}`}
+                  >
+                    <span className="text-sm">{reaction.visitorAvatar}</span>
+                    <span className="text-lg">{reaction.reaction?.emoji || '💪'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Companion encouragement */}
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
@@ -1079,6 +1198,176 @@ function GardenElementPopup({ element, companion, onClose }) {
           >
             Keep growing
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Visitor gift popup - shows who left a gift in your forest
+function VisitorGiftPopup({ gift, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 animate-fadeIn">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white rounded-2xl max-w-sm w-full shadow-xl animate-slideUp overflow-hidden">
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-pink-100 via-rose-100 to-purple-100 px-5 py-6 text-center relative overflow-hidden">
+          {/* Hearts decoration */}
+          <div className="absolute top-2 left-6 text-pink-400 text-sm animate-float">💕</div>
+          <div className="absolute top-4 right-8 text-rose-400 text-xs animate-float" style={{ animationDelay: '0.5s' }}>💖</div>
+          <div className="absolute bottom-3 right-12 text-pink-300 text-sm animate-float" style={{ animationDelay: '1s' }}>💗</div>
+
+          <span className="text-5xl block mb-2">{gift.emoji}</span>
+          <h3 className="text-lg font-semibold text-gray-800">{gift.name}</h3>
+          <p className="text-sm text-gray-500">A gift from a friend</p>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          {/* Visitor info */}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center text-2xl">
+              {gift.visitorAvatar}
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">{gift.visitorName}</p>
+              <p className="text-xs text-gray-500">visited {gift.leftAt}</p>
+            </div>
+          </div>
+
+          {/* Message */}
+          <div className="bg-pink-50 rounded-xl p-4 mb-4 text-center">
+            <p className="text-gray-700 italic">"{gift.message}"</p>
+          </div>
+
+          {/* Encouragement */}
+          <div className="bg-gray-50 rounded-lg p-3 mb-4">
+            <p className="text-sm text-gray-600 text-center">
+              Friends who visit your forest can leave gifts to cheer you on! 🎉
+            </p>
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 bg-pink-500 text-white font-medium rounded-xl hover:bg-pink-600 transition-colors"
+          >
+            Thanks, friend!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Invite friends modal - share your forest link
+function InviteModal({ forestCode, userName, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}${window.location.pathname}?visit=${forestCode}`;
+  const shareText = `${userName || 'A friend'} invites you to visit their wellness forest! 🌳\n\nLeave a gift and cheer them on their health journey.\n\n${shareUrl}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Visit ${userName || 'my'} wellness forest!`,
+          text: shareText,
+          url: shareUrl
+        });
+      } catch (err) {
+        // User cancelled or error
+        handleCopy();
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 animate-fadeIn">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white rounded-2xl max-w-sm w-full shadow-xl animate-slideUp overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-pink-100 via-purple-100 to-indigo-100 px-5 py-6 text-center">
+          <span className="text-4xl block mb-2">💌</span>
+          <h3 className="text-lg font-semibold text-gray-800">Invite friends to visit</h3>
+          <p className="text-sm text-gray-500">They can leave gifts and cheer you on!</p>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          {/* Forest code */}
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-2 text-center">Your forest code</p>
+            <div className="bg-gray-100 rounded-xl px-4 py-3 text-center">
+              <span className="font-mono text-2xl font-bold text-gray-800 tracking-wider">{forestCode}</span>
+            </div>
+          </div>
+
+          {/* Share link */}
+          <div className="mb-4">
+            <p className="text-xs text-gray-500 mb-2">Share link</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 truncate"
+              />
+              <button
+                onClick={handleCopy}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  copied
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {copied ? '✓' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          {/* What visitors can do */}
+          <div className="bg-amber-50 rounded-xl p-4 mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">When friends visit, they can:</p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li className="flex items-center gap-2"><span>🌸</span> Leave a flower or tree as a gift</li>
+              <li className="flex items-center gap-2"><span>💪</span> React to your quests with encouragement</li>
+              <li className="flex items-center gap-2"><span>✨</span> Send motivational vibes</li>
+            </ul>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 py-3 px-4 bg-pink-500 text-white font-medium rounded-xl hover:bg-pink-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>📤</span> Share
+            </button>
+          </div>
         </div>
       </div>
     </div>

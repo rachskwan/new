@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './index.css';
 import { getAllCompanions } from './data/companions';
 import { calculateHealthType } from './data/healthTypes';
+import { getVisitors, generateForestCode, getVisitorGiftsAsGardenElements } from './data/visitors';
 import {
   getCurrentUser,
   logout,
@@ -41,6 +42,8 @@ function App() {
   const [activeQuests, setActiveQuests] = useState([]); // {id, companionId, text, icon, status: 'active'|'completed', addedAt}
   const [healthType, setHealthType] = useState(null); // User's playful health type
   const [gardenElements, setGardenElements] = useState([]); // Nature elements that grow when quests complete
+  const [visitors, setVisitors] = useState([]); // Friends who visited the forest
+  const [forestCode, setForestCode] = useState(''); // Shareable code for forest
 
   const companions = getAllCompanions();
   const currentCompanion = companions[currentCompanionIndex];
@@ -67,6 +70,14 @@ function App() {
     setActiveQuests(quests);
     setHealthType(savedType);
     setGardenElements(garden);
+
+    // Load visitors (mock data for now)
+    setVisitors(getVisitors());
+
+    // Generate or load forest code
+    const code = userData.forestCode || generateForestCode(userData.id);
+    setForestCode(code);
+
     if (scores.length > 0) {
       setSortedCompanions(scores);
       // Recalculate type if not saved
@@ -413,6 +424,8 @@ function App() {
           activeQuests={activeQuests}
           healthType={healthType}
           gardenElements={gardenElements}
+          visitors={visitors}
+          forestCode={forestCode}
           onStartCheckIn={() => setScreen('onboarding')}
           onViewQuests={handleViewQuests}
           onExploreBlood={handleExploreBlood}
