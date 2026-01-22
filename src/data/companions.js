@@ -30,24 +30,6 @@ export const companions = {
         text: 'How would you describe your energy levels this week?',
         type: 'slider',
         labels: ['Running on empty', 'Steady', 'Buzzing with energy']
-      },
-      {
-        id: 'pip-2',
-        text: 'When do you feel most alive during the day?',
-        type: 'choice',
-        options: ['Early morning', 'Mid-morning', 'Afternoon', 'Evening', 'It varies a lot']
-      },
-      {
-        id: 'pip-3',
-        text: 'Have you noticed any energy crashes this week?',
-        type: 'choice',
-        options: ['No crashes', 'One or two dips', 'Daily crashes', 'Constant low energy']
-      },
-      {
-        id: 'pip-4',
-        text: 'How refreshed do you feel after sleeping?',
-        type: 'slider',
-        labels: ['Still exhausted', 'Okay', 'Fully recharged']
       }
     ],
     microQuests: [
@@ -85,24 +67,6 @@ export const companions = {
         text: 'How would you rate your sleep quality this week?',
         type: 'slider',
         labels: ['Rough nights', 'Hit or miss', 'Sleeping well']
-      },
-      {
-        id: 'luna-2',
-        text: 'What time do you usually fall asleep?',
-        type: 'choice',
-        options: ['Before 10pm', '10pm - 11pm', '11pm - midnight', 'After midnight', "It's all over the place"]
-      },
-      {
-        id: 'luna-3',
-        text: 'Do you wake up during the night?',
-        type: 'choice',
-        options: ['Rarely', 'Once usually', 'Multiple times', 'Almost every hour']
-      },
-      {
-        id: 'luna-4',
-        text: "How's your wind-down routine?",
-        type: 'choice',
-        options: ['I have a good routine', 'Sometimes I wind down', "I just crash when I'm tired", 'What routine?']
       }
     ],
     microQuests: [
@@ -140,24 +104,6 @@ export const companions = {
         text: 'How much intentional movement did you get this week?',
         type: 'slider',
         labels: ['Very little', 'Some movement', 'Moving regularly']
-      },
-      {
-        id: 'ember-2',
-        text: 'What kind of movement feels good to you right now?',
-        type: 'choice',
-        options: ['Gentle (walking, stretching)', 'Moderate (hiking, swimming)', 'Intense (running, weights)', "I'm not sure what I need"]
-      },
-      {
-        id: 'ember-3',
-        text: 'How does your body feel overall?',
-        type: 'slider',
-        labels: ['Tight and stuck', 'A bit stiff', 'Loose and mobile']
-      },
-      {
-        id: 'ember-4',
-        text: 'Any aches or pains showing up?',
-        type: 'choice',
-        options: ['Nothing notable', 'A few minor things', 'Something persistent', 'Multiple areas bothering me']
       }
     ],
     microQuests: [
@@ -195,24 +141,6 @@ export const companions = {
         text: 'How would you describe your mental clarity this week?',
         type: 'slider',
         labels: ['Foggy', 'Somewhat clear', 'Sharp and focused']
-      },
-      {
-        id: 'sage-2',
-        text: "How's your ability to concentrate?",
-        type: 'choice',
-        options: ['Easily distracted', 'Can focus for short bursts', 'Pretty good focus', 'Deep concentration when needed']
-      },
-      {
-        id: 'sage-3',
-        text: 'How much mental load are you carrying?',
-        type: 'slider',
-        labels: ['Overwhelmed', 'Managing', 'Light and clear']
-      },
-      {
-        id: 'sage-4',
-        text: 'Have you had moments of calm this week?',
-        type: 'choice',
-        options: ['Rarely or never', 'A few moments', 'Most days', 'Yes, I make time for it']
       }
     ],
     microQuests: [
@@ -256,18 +184,6 @@ export const companions = {
         text: 'What emotions have been most present?',
         type: 'choice',
         options: ['Anxiety or worry', 'Sadness or low mood', 'Frustration or irritation', 'Content or calm', 'A mix of everything']
-      },
-      {
-        id: 'coral-3',
-        text: 'How connected do you feel to people you care about?',
-        type: 'slider',
-        labels: ['Disconnected', 'Somewhat connected', 'Very connected']
-      },
-      {
-        id: 'coral-4',
-        text: 'Have you had moments of joy or laughter this week?',
-        type: 'choice',
-        options: ['Not really', 'One or two moments', 'Several times', 'Every day']
       }
     ],
     microQuests: [
@@ -305,24 +221,6 @@ export const companions = {
         text: 'How would you describe your eating patterns this week?',
         type: 'slider',
         labels: ['Chaotic', 'Inconsistent', 'Pretty regular']
-      },
-      {
-        id: 'brook-2',
-        text: 'How much water are you drinking?',
-        type: 'choice',
-        options: ['Barely any', 'A few glasses', 'Decent amount', 'Well hydrated']
-      },
-      {
-        id: 'brook-3',
-        text: 'How do you feel after eating?',
-        type: 'choice',
-        options: ['Heavy or bloated', 'Sometimes uncomfortable', 'Usually fine', 'Energized and satisfied']
-      },
-      {
-        id: 'brook-4',
-        text: 'Are you eating mostly real food or convenience food?',
-        type: 'slider',
-        labels: ['Mostly packaged/fast food', 'Mixed', 'Mostly whole foods']
       }
     ],
     microQuests: [
@@ -360,24 +258,6 @@ export const companions = {
         text: 'How stressed have you felt this week?',
         type: 'slider',
         labels: ['Very stressed', 'Moderate stress', 'Pretty calm']
-      },
-      {
-        id: 'oak-2',
-        text: "What's your main source of stress right now?",
-        type: 'choice',
-        options: ['Work/school', 'Relationships', 'Health concerns', 'Money/finances', 'General overwhelm', 'Nothing major']
-      },
-      {
-        id: 'oak-3',
-        text: 'Do you have ways to decompress?',
-        type: 'choice',
-        options: ['Not really', 'Sometimes I remember to', 'I have a few go-tos', 'Yes, I practice regularly']
-      },
-      {
-        id: 'oak-4',
-        text: 'How quickly do you recover from stressful moments?',
-        type: 'slider',
-        labels: ['They linger for days', 'Takes a while', 'I bounce back fairly quickly']
       }
     ],
     microQuests: [
