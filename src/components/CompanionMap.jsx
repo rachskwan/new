@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getAllCompanions, getMoodEmoji } from '../data/companions';
 import CompanionPopup from './CompanionPopup';
-import { communityStats } from '../data/communityData';
+import { communityStats, getGlobalQuests } from '../data/communityData';
 import MapShareCard from './MapShareCard';
 
 // Map positions for each companion - creates a forest/nature scene
@@ -36,7 +36,17 @@ export default function CompanionMap({
   const [showTypeCard, setShowTypeCard] = useState(false);
   const [questFilter, setQuestFilter] = useState('all'); // 'all', 'active', 'completed'
   const [showAddQuest, setShowAddQuest] = useState(false);
+  const [showGlobalView, setShowGlobalView] = useState(false);
+  const [selectedGlobalQuest, setSelectedGlobalQuest] = useState(null);
   const companions = getAllCompanions();
+  const globalQuests = getGlobalQuests();
+
+  // Group global quests by companion
+  const globalQuestsByCompanion = globalQuests.reduce((acc, quest) => {
+    if (!acc[quest.companionId]) acc[quest.companionId] = [];
+    acc[quest.companionId].push(quest);
+    return acc;
+  }, {});
 
   // Group quests by companion
   const questsByCompanion = activeQuests.reduce((acc, quest) => {
@@ -293,15 +303,57 @@ export default function CompanionMap({
           );
         })}
 
-        {/* Community presence indicator */}
-        <div className="absolute bottom-4 right-4 bg-white/80 rounded-full px-3 py-1.5 flex items-center gap-2">
-          <div className="flex -space-x-1">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
+        {/* Global view toggle */}
+        {hasCompletedCheckIn && (
+          <button
+            onClick={() => setShowGlobalView(!showGlobalView)}
+            className={`absolute bottom-4 right-4 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm border transition-all hover:scale-105 ${
+              showGlobalView
+                ? 'bg-indigo-500 text-white border-indigo-600'
+                : 'bg-white/90 hover:bg-white border-gray-200'
+            }`}
+          >
+            <div className="flex -space-x-1">
+              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white' : 'bg-emerald-400'}`} />
+              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white/80' : 'bg-blue-400'}`} style={{ animationDelay: '200ms' }} />
+              <div className={`w-2 h-2 rounded-full animate-pulse ${showGlobalView ? 'bg-white/60' : 'bg-purple-400'}`} style={{ animationDelay: '400ms' }} />
+            </div>
+            <span className="text-xs">{showGlobalView ? 'Hide global' : `${communityStats.activeThisWeek} exploring`}</span>
+          </button>
+        )}
+
+        {/* Global quests floating on map */}
+        {showGlobalView && (
+          <div className="absolute inset-0 pointer-events-none">
+            {globalQuests.slice(0, 8).map((quest, i) => {
+              const companion = companions.find(c => c.id === quest.companionId);
+              const pos = mapPositions[quest.companionId];
+              // Offset each quest slightly from the companion position
+              const offsetX = ((i % 3) - 1) * 12;
+              const offsetY = (Math.floor(i / 3) - 1) * 8;
+
+              return (
+                <button
+                  key={quest.id}
+                  onClick={() => setSelectedGlobalQuest(quest)}
+                  className="absolute pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 animate-float"
+                  style={{
+                    left: `${Math.min(90, Math.max(10, pos.x + offsetX))}%`,
+                    top: `${Math.min(90, Math.max(10, pos.y + offsetY))}%`,
+                    animationDelay: `${i * 200}ms`
+                  }}
+                >
+                  <div className="bg-white/95 rounded-lg px-2 py-1 shadow-md border border-indigo-200 hover:border-indigo-400 hover:scale-105 transition-all">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs">{quest.icon}</span>
+                      <span className="text-xs text-gray-600 max-w-[80px] truncate">{quest.user}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          <span className="text-xs text-gray-500">{communityStats.activeThisWeek} exploring</span>
-        </div>
+        )}
 
         {/* Share map button */}
         {hasCompletedCheckIn && (
@@ -442,6 +494,30 @@ export default function CompanionMap({
           onAdd={(quest) => {
             onAddCustomQuest?.(quest);
             setShowAddQuest(false);
+          }}
+        />
+      )}
+
+      {/* Global Quest Popup */}
+      {selectedGlobalQuest && (
+        <GlobalQuestPopup
+          quest={selectedGlobalQuest}
+          companion={companions.find(c => c.id === selectedGlobalQuest.companionId)}
+          onClose={() => setSelectedGlobalQuest(null)}
+          onTryIt={() => {
+            // Add this quest to user's active quests
+            onAddCustomQuest?.({
+              id: `inspired-${Date.now()}`,
+              companionId: selectedGlobalQuest.companionId,
+              text: selectedGlobalQuest.quest,
+              icon: selectedGlobalQuest.icon,
+              status: 'active',
+              addedAt: new Date().toISOString(),
+              isCustom: true,
+              inspiredBy: selectedGlobalQuest.user
+            });
+            setSelectedGlobalQuest(null);
+            setShowGlobalView(false);
           }}
         />
       )}
@@ -794,6 +870,81 @@ function QuickAddQuestModal({ companions, onClose, onAdd }) {
           >
             Add to map
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Global quest popup - shows what others are working on
+function GlobalQuestPopup({ quest, companion, onClose, onTryIt }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 animate-fadeIn">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white rounded-2xl max-w-sm w-full shadow-xl animate-slideUp overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-100 to-purple-100 px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{quest.icon}</span>
+              <div>
+                <p className="font-medium text-gray-800">{quest.user}</p>
+                <p className="text-xs text-gray-500">is working on this quest</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/50 text-gray-500 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Quest content */}
+        <div className="p-5">
+          {/* Quest text */}
+          <div className="bg-gray-50 rounded-xl p-4 mb-4">
+            <p className="text-gray-800 font-medium">{quest.quest}</p>
+            <p className="text-xs text-gray-400 mt-2">Started {quest.startedAt}</p>
+          </div>
+
+          {/* Companion info */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-10 h-10 ${companion?.bgLight || 'bg-gray-100'} rounded-xl flex items-center justify-center text-xl`}>
+              {companion?.emoji}
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Quest for</p>
+              <p className="font-medium text-gray-800">{companion?.name} · {companion?.domain}</p>
+            </div>
+          </div>
+
+          {/* Inspiration message */}
+          <div className="bg-indigo-50 rounded-lg p-3 mb-4">
+            <p className="text-sm text-indigo-700">
+              Get inspired! Try this quest yourself and join {quest.user} on their wellness journey.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Maybe later
+            </button>
+            <button
+              onClick={onTryIt}
+              className="flex-1 py-3 px-4 bg-indigo-500 text-white font-medium rounded-xl hover:bg-indigo-600 transition-colors"
+            >
+              Try this quest
+            </button>
+          </div>
         </div>
       </div>
     </div>
