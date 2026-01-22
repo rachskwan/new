@@ -39,6 +39,7 @@ export default function CompanionMap({
   const [showAddQuest, setShowAddQuest] = useState(false);
   const [showGlobalView, setShowGlobalView] = useState(false);
   const [selectedGlobalQuest, setSelectedGlobalQuest] = useState(null);
+  const [selectedGardenElement, setSelectedGardenElement] = useState(null);
   const companions = getAllCompanions();
   const globalQuests = getGlobalQuests();
 
@@ -229,7 +230,7 @@ export default function CompanionMap({
               key={companion.id}
               onClick={() => handleCompanionClick(companion)}
               className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110 focus:outline-none group"
-              style={{ left: `${companion.x}%`, top: `${companion.y}%` }}
+              style={{ left: `${companion.x}%`, top: `${companion.y}%`, zIndex: 10 }}
             >
               {/* Glow effect */}
               <div className={`absolute inset-0 rounded-full blur-xl opacity-50 transition-opacity ${
@@ -310,21 +311,25 @@ export default function CompanionMap({
           if (!pos) return null;
 
           return (
-            <div
+            <button
               key={element.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-grow-in"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedGardenElement(element);
+              }}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 animate-grow-in hover:scale-150 transition-transform focus:outline-none focus:ring-2 focus:ring-amber-300 rounded-full p-1"
               style={{
                 left: `${Math.min(95, Math.max(5, pos.x + element.offsetX))}%`,
                 top: `${Math.min(95, Math.max(5, pos.y + element.offsetY))}%`,
                 animationDelay: `${i * 100}ms`,
-                zIndex: 5
+                zIndex: 8
               }}
-              title={`${element.name} - from: ${element.questText}`}
+              title={`${element.name} - Tap to see accomplishment`}
             >
-              <span className="text-2xl drop-shadow-sm hover:scale-125 transition-transform cursor-default">
+              <span className="text-2xl drop-shadow-md cursor-pointer">
                 {element.emoji}
               </span>
-            </div>
+            </button>
           );
         })}
 
@@ -557,6 +562,15 @@ export default function CompanionMap({
             setSelectedGlobalQuest(null);
             setShowGlobalView(false);
           }}
+        />
+      )}
+
+      {/* Garden Element Popup - shows accomplishment details */}
+      {selectedGardenElement && (
+        <GardenElementPopup
+          element={selectedGardenElement}
+          companion={companions.find(c => c.id === selectedGardenElement.companionId)}
+          onClose={() => setSelectedGardenElement(null)}
         />
       )}
     </div>
@@ -983,6 +997,88 @@ function GlobalQuestPopup({ quest, companion, onClose, onTryIt }) {
               Try this quest
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Garden element popup - shows accomplishment details for completed quests
+function GardenElementPopup({ element, companion, onClose }) {
+  const plantedDate = element.plantedAt ? new Date(element.plantedAt) : new Date();
+  const formattedDate = plantedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: plantedDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/30 animate-fadeIn">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white rounded-2xl max-w-sm w-full shadow-xl animate-slideUp overflow-hidden">
+        {/* Header with nature gradient */}
+        <div className="bg-gradient-to-r from-emerald-100 via-green-100 to-teal-100 px-5 py-6 text-center relative overflow-hidden">
+          {/* Decorative sparkles */}
+          <div className="absolute top-2 left-4 text-yellow-400 text-xs animate-sparkle">✨</div>
+          <div className="absolute top-4 right-6 text-yellow-400 text-sm animate-sparkle" style={{ animationDelay: '0.3s' }}>✨</div>
+          <div className="absolute bottom-3 left-8 text-yellow-400 text-xs animate-sparkle" style={{ animationDelay: '0.6s' }}>✨</div>
+
+          <span className="text-5xl block mb-2">{element.emoji}</span>
+          <h3 className="text-lg font-semibold text-gray-800">{element.name}</h3>
+          <p className="text-sm text-gray-500">Grew in your garden</p>
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          {/* Accomplishment badge */}
+          <div className="flex items-center justify-center mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+              <span>🏆</span> Accomplishment
+            </span>
+          </div>
+
+          {/* Quest that was completed */}
+          <div className="bg-gray-50 rounded-xl p-4 mb-4">
+            <p className="text-xs text-gray-400 mb-1">Quest completed:</p>
+            <p className="text-gray-800 font-medium">{element.questText}</p>
+          </div>
+
+          {/* Companion connection */}
+          {companion && (
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-10 h-10 ${companion.bgLight} rounded-xl flex items-center justify-center text-xl`}>
+                {companion.emoji}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Nurtured by</p>
+                <p className="font-medium text-gray-800">{companion.name} · {companion.domain}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Date planted */}
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <span>🌱</span>
+            <span>Planted on {formattedDate}</span>
+          </div>
+
+          {/* Encouragement */}
+          <div className="bg-amber-50 rounded-lg p-3 mb-4">
+            <p className="text-sm text-amber-800 italic">
+              "Every completed quest grows something beautiful in your garden. Keep nurturing yourself!"
+            </p>
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors"
+          >
+            Keep growing
+          </button>
         </div>
       </div>
     </div>

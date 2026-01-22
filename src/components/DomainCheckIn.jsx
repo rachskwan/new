@@ -1,12 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function DomainCheckIn({ companion, onComplete, onBack, currentIndex, totalCompanions }) {
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
+  // Reset state when companion changes
+  useEffect(() => {
+    setAnswers({});
+    setCurrentQuestion(0);
+  }, [companion.id]);
+
   const questions = companion.questions;
   const question = questions[currentQuestion];
   const progress = ((currentIndex * questions.length + currentQuestion) / (totalCompanions * questions.length)) * 100;
+
+  // Safety check - if question doesn't exist, reset to first question
+  if (!question) {
+    return null;
+  }
 
   const handleAnswer = (questionId, value) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));

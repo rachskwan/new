@@ -27,16 +27,18 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
 
   // Calculate scores for each companion based on their answers
   const scores = companions.map(companion => {
-    const companionAnswers = Object.entries(responses)
+    const companionAnswers = Object.entries(responses || {})
       .filter(([key]) => key.startsWith(companion.id))
-      .map(([, value]) => value);
+      .map(([, value]) => typeof value === 'number' ? value : 50);
 
-    const avgScore = companionAnswers.reduce((sum, val) => sum + val, 0) / companionAnswers.length;
+    const avgScore = companionAnswers.length > 0
+      ? companionAnswers.reduce((sum, val) => sum + val, 0) / companionAnswers.length
+      : 50;
 
     return {
       ...companion,
-      score: avgScore,
-      level: getLevel(avgScore)
+      score: isNaN(avgScore) ? 50 : avgScore,
+      level: getLevel(isNaN(avgScore) ? 50 : avgScore)
     };
   });
 

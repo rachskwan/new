@@ -213,26 +213,12 @@ export const companions = {
         text: 'Have you had moments of calm this week?',
         type: 'choice',
         options: ['Rarely or never', 'A few moments', 'Most days', 'Yes, I make time for it']
-      },
-      {
-        id: 'sage-5',
-        text: 'How productive have you felt this week?',
-        type: 'slider',
-        labels: ['Stuck in a rut', 'Getting some things done', 'In a great flow']
-      },
-      {
-        id: 'sage-6',
-        text: 'How connected do you feel to your sense of purpose?',
-        type: 'choice',
-        options: ['Feeling lost or uncertain', 'Searching for direction', 'Have glimpses of clarity', 'Feeling aligned and purposeful']
       }
     ],
     microQuests: [
       { text: 'Take 3 deep breaths right now', icon: '🌬️' },
       { text: 'Write down one thing on your mind', icon: '📝' },
-      { text: 'Step outside for 2 minutes', icon: '🌳' },
-      { text: 'Write down one thing you are grateful for', icon: '🙏' },
-      { text: 'Identify your top priority for today', icon: '🎯' }
+      { text: 'Step outside for 2 minutes', icon: '🌳' }
     ]
   },
 

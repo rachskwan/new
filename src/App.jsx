@@ -150,12 +150,15 @@ function App() {
       const scores = companions.map(companion => {
         const answers = Object.entries(newResponses)
           .filter(([key]) => key.startsWith(companion.id))
-          .map(([, value]) => value);
-        const avgScore = answers.reduce((sum, val) => sum + val, 0) / answers.length;
+          .map(([, value]) => typeof value === 'number' ? value : 50);
+        const avgScore = answers.length > 0
+          ? answers.reduce((sum, val) => sum + val, 0) / answers.length
+          : 50;
+        const safeScore = isNaN(avgScore) ? 50 : avgScore;
         return {
           ...companion,
-          score: avgScore,
-          level: getLevel(avgScore)
+          score: safeScore,
+          level: getLevel(safeScore)
         };
       });
 
