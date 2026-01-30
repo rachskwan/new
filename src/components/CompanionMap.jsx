@@ -45,6 +45,7 @@ export default function CompanionMap({
   const [selectedGardenElement, setSelectedGardenElement] = useState(null);
   const [selectedVisitorGift, setSelectedVisitorGift] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showJournal, setShowJournal] = useState(false);
   const companions = getAllCompanions();
   const globalQuests = getGlobalQuests();
   const visitorGifts = getVisitorGiftsAsGardenElements(visitors);
@@ -123,14 +124,27 @@ export default function CompanionMap({
               )}
             </div>
 
-            {/* User menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-600 border border-gray-200 hover:border-gray-300 transition-colors"
-              >
-                {user?.name?.[0]?.toUpperCase() || '👤'}
-              </button>
+            {/* Journal and User menu */}
+            <div className="flex items-center gap-2">
+              {/* Journal button */}
+              {hasCompletedCheckIn && checkInHistory.length > 0 && (
+                <button
+                  onClick={() => setShowJournal(true)}
+                  className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-lg border border-gray-200 hover:border-amber-300 hover:bg-amber-50 transition-colors"
+                  title="View journal"
+                >
+                  📓
+                </button>
+              )}
+
+              {/* User menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-600 border border-gray-200 hover:border-gray-300 transition-colors"
+                >
+                  {user?.name?.[0]?.toUpperCase() || '👤'}
+                </button>
 
               {showUserMenu && (
                 <>
@@ -162,6 +176,7 @@ export default function CompanionMap({
               )}
             </div>
           </div>
+        </div>
 
           {/* Title */}
           <div className="text-center">
@@ -657,6 +672,14 @@ export default function CompanionMap({
           forestCode={forestCode}
           userName={user?.name}
           onClose={() => setShowInviteModal(false)}
+        />
+      )}
+
+      {/* Journal Modal - view past reflections */}
+      {showJournal && (
+        <JournalModal
+          checkInHistory={checkInHistory}
+          onClose={() => setShowJournal(false)}
         />
       )}
     </div>
@@ -1368,6 +1391,166 @@ function InviteModal({ forestCode, userName, onClose }) {
               <span>📤</span> Share
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Journal modal - view past reflections and check-ins
+function JournalModal({ checkInHistory, onClose }) {
+  const [selectedEntry, setSelectedEntry] = useState(null);
+
+  // Sort entries by date, most recent first
+  const sortedEntries = [...(checkInHistory || [])].sort((a, b) => {
+    const dateA = new Date(a.date || a.timestamp || 0);
+    const dateB = new Date(b.date || b.timestamp || 0);
+    return dateB - dateA;
+  });
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    });
+  };
+
+  const getHealthEmoji = (entry) => {
+    if (entry.healthType?.emoji) return entry.healthType.emoji;
+    return '🌿';
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 animate-fadeIn">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white rounded-2xl max-w-md w-full max-h-[80vh] shadow-xl animate-slideUp overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-amber-100 via-orange-100 to-yellow-100 px-5 py-5 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">📓</span>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">My Journal</h3>
+                <p className="text-sm text-gray-500">{sortedEntries.length} check-in{sortedEntries.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/50 text-gray-500 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {sortedEntries.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="text-4xl block mb-3">📝</span>
+              <p className="text-gray-600 mb-2">No journal entries yet</p>
+              <p className="text-sm text-gray-400">Complete a check-in to start your journal</p>
+            </div>
+          ) : selectedEntry ? (
+            // Detail view of selected entry
+            <div className="animate-fadeIn">
+              <button
+                onClick={() => setSelectedEntry(null)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
+              >
+                <span>←</span> Back to list
+              </button>
+
+              <div className="bg-amber-50 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{getHealthEmoji(selectedEntry)}</span>
+                  <div>
+                    <p className="font-medium text-gray-800">{formatDate(selectedEntry.date || selectedEntry.timestamp)}</p>
+                    {selectedEntry.healthType?.name && (
+                      <p className="text-sm text-gray-500">{selectedEntry.healthType.name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {selectedEntry.reflection ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+                  <p className="text-xs text-gray-400 mb-2">Reflection</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedEntry.reflection}</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center">
+                  <p className="text-gray-400 italic">No reflection written for this check-in</p>
+                </div>
+              )}
+
+              {/* Companion scores summary */}
+              {selectedEntry.companionScores && selectedEntry.companionScores.length > 0 && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs text-gray-400 mb-3">How you were feeling</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedEntry.companionScores.slice(0, 8).map((comp, i) => (
+                      <div key={i} className="text-center">
+                        <div className={`w-10 h-10 mx-auto ${comp.bgLight || 'bg-gray-100'} rounded-lg flex items-center justify-center text-lg mb-1`}>
+                          {comp.emoji}
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">{comp.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // List view
+            <div className="space-y-3">
+              {sortedEntries.map((entry, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedEntry(entry)}
+                  className="w-full text-left bg-white border border-gray-200 rounded-xl p-4 hover:border-amber-300 hover:bg-amber-50/50 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+                      {getHealthEmoji(entry)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-gray-800">
+                          {formatDate(entry.date || entry.timestamp)}
+                        </p>
+                        <span className="text-xs text-gray-400">→</span>
+                      </div>
+                      {entry.reflection ? (
+                        <p className="text-sm text-gray-500 line-clamp-2">{entry.reflection}</p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">No reflection</p>
+                      )}
+                      {entry.healthType?.name && (
+                        <p className="text-xs text-amber-600 mt-1">{entry.healthType.name}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+          >
+            Close journal
+          </button>
         </div>
       </div>
     </div>

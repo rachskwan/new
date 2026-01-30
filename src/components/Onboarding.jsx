@@ -1,67 +1,39 @@
-import { getAllCompanions } from '../data/companions';
-
 export default function Onboarding({ onBegin }) {
-  const companions = getAllCompanions();
-
   return (
-    <div className="min-h-screen bg-amber-50/40 flex flex-col items-center justify-center px-6 py-12">
-      <div className="max-w-2xl w-full">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-rose-50 to-violet-50 flex flex-col items-center justify-center px-6 py-12">
+      <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-sm text-gray-400 mb-2">meet your companions</p>
-          <h1 className="text-2xl font-semibold text-gray-800 mb-3">
-            Each one represents a health domain
+          <div className="flex justify-center gap-3 mb-6 text-4xl">
+            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>🐢</span>
+            <span className="animate-bounce" style={{ animationDelay: '100ms' }}>🦋</span>
+            <span className="animate-bounce" style={{ animationDelay: '200ms' }}>🦊</span>
+            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>🦉</span>
+            <span className="animate-bounce" style={{ animationDelay: '400ms' }}>🐰</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Discover Your Health Type
           </h1>
-          <p className="text-gray-500">
-            They'll ask how you're doing in their area. Answer honestly — there are no wrong answers.
+          <p className="text-gray-500 text-lg">
+            Answer 10 fun questions to find your wellness critter and personal health style.
           </p>
         </div>
 
-        {/* Companion grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-          {companions.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-colors"
-            >
-              <div className={`w-14 h-14 ${c.bgLight} rounded-xl flex items-center justify-center text-3xl mb-3`}>
-                {c.emoji}
-              </div>
-              <h3 className="font-medium text-gray-800">{c.name}</h3>
-              <p className="text-xs text-gray-400 mb-1">{c.animal}</p>
-              <p className="text-xs text-gray-500">{c.domain}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* How it works */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
-          <h3 className="font-medium text-gray-800 mb-4">How this works</h3>
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex gap-3">
-              <span className="text-gray-400">1.</span>
-              <span>Each companion asks a few questions about their domain</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-gray-400">2.</span>
-              <span>You'll see which companions are supporting you most right now</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-gray-400">3.</span>
-              <span>Get optional micro-quests to try (no pressure)</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-gray-400">4.</span>
-              <span>Check in again next week to notice patterns</span>
-            </div>
+        {/* What you'll discover */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-sm">
+          <p className="text-sm text-gray-500 mb-4 text-center">You'll discover:</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <span className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm">Your health archetype</span>
+            <span className="px-4 py-2 bg-violet-100 text-violet-700 rounded-full text-sm">Your critter guide</span>
+            <span className="px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm">Your strengths</span>
+            <span className="px-4 py-2 bg-rose-100 text-rose-700 rounded-full text-sm">Personalized tips</span>
           </div>
         </div>
 
         {/* Dalton seed - subtle */}
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-8">
+        <div className="bg-white/50 rounded-xl p-4 border border-gray-100 mb-8">
           <p className="text-sm text-gray-500 text-center">
-            Each companion represents a part of your body and habits.
-            Later, you can explore what's happening beneath the surface — if you're curious!
+            Your results can help you understand what's happening beneath the surface — if you're curious!
           </p>
         </div>
 
@@ -69,11 +41,11 @@ export default function Onboarding({ onBegin }) {
         <div className="text-center">
           <button
             onClick={onBegin}
-            className="px-8 py-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
+            className="px-8 py-4 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-all transform hover:scale-105 shadow-lg"
           >
-            Begin check-in
+            Start the Quiz
           </button>
-          <p className="mt-4 text-xs text-gray-400">Takes about 5 minutes</p>
+          <p className="mt-4 text-xs text-gray-400">Takes about 3 minutes</p>
         </div>
       </div>
     </div>

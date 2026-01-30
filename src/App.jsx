@@ -18,6 +18,7 @@ import {
 import Landing from './components/Landing';
 import AuthScreen from './components/AuthScreen';
 import Onboarding from './components/Onboarding';
+import MBTIAssessment from './components/MBTIAssessment';
 import DomainCheckIn from './components/DomainCheckIn';
 import Dashboard from './components/Dashboard';
 import MicroQuests from './components/MicroQuests';
@@ -143,11 +144,25 @@ function App() {
     setScreen('auth');
   };
 
-  // Check-in flow
+  // Check-in flow - always go to MBTI assessment
   const handleBeginCheckIn = () => {
-    setCurrentCompanionIndex(0);
-    setResponses({});
-    setScreen('checkin');
+    setScreen('mbti-assessment');
+  };
+
+  // MBTI Assessment complete handler
+  const handleMBTIComplete = (typeResult) => {
+    setHealthType(typeResult.primary);
+
+    // Generate default companion scores (neutral) since we skip domain check-ins
+    const defaultScores = companions.map(companion => ({
+      ...companion,
+      score: 50,
+      level: 'medium'
+    }));
+    setSortedCompanions(defaultScores);
+
+    // Go directly to dashboard
+    setScreen('dashboard');
   };
 
   const handleCompanionComplete = (companionAnswers) => {
@@ -438,6 +453,13 @@ function App() {
 
       {screen === 'onboarding' && (
         <Onboarding onBegin={handleBeginCheckIn} />
+      )}
+
+      {screen === 'mbti-assessment' && (
+        <MBTIAssessment
+          onComplete={handleMBTIComplete}
+          onBack={() => setScreen('onboarding')}
+        />
       )}
 
       {screen === 'checkin' && currentCompanion && (

@@ -3,10 +3,12 @@ import { getAllCompanions } from '../data/companions';
 import CommunityInsights from './CommunityInsights';
 import { ShareButton } from './ShareSnapshot';
 import SpiderChart from './SpiderChart';
+import AllCritters from './AllCritters';
 
 export default function Dashboard({ responses, healthType, isFirstCheckIn, onViewQuests, onReflect, onExploreBlood, onAddQuest }) {
   const companions = getAllCompanions();
   const [showCommunity, setShowCommunity] = useState(false);
+  const [showAllCritters, setShowAllCritters] = useState(false);
   // Show reveal for first-time users OR whenever we have a healthType (fresh quiz completion)
   const shouldShowReveal = healthType && isFirstCheckIn;
   const [revealStage, setRevealStage] = useState(shouldShowReveal ? 0 : -1); // -1 = no reveal, 0-3 = reveal stages
@@ -95,7 +97,7 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
                   </p>
 
                   <div className={`transition-all duration-700 delay-300 ${revealStage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                    <span className="text-6xl mb-4 block">{healthType.emoji}</span>
+                    <span className="text-6xl mb-4 block">{healthType.critter || healthType.emoji}</span>
                     <h1 className="text-3xl font-bold mb-2">{healthType.name}</h1>
                     <p className="text-white/80 italic text-lg">"{healthType.tagline}"</p>
                   </div>
@@ -106,6 +108,44 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
                     </p>
                   </div>
                 </div>
+
+                {/* Strengths Section - appears after main reveal */}
+                {revealStage >= 3 && healthType.strengths && (
+                  <div className="mt-6 bg-white/90 backdrop-blur-sm rounded-2xl p-6 text-left transition-all duration-500 delay-700">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <span>💪</span> Your Strengths
+                    </h3>
+                    <ul className="space-y-2">
+                      {healthType.strengths.slice(0, 3).map((strength, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-emerald-500 mt-0.5">✓</span>
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Traits badges */}
+                {revealStage >= 3 && healthType.traits && (
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {healthType.traits.map((trait, i) => (
+                      <span key={i} className="px-3 py-1 bg-white/80 rounded-full text-sm text-gray-600">
+                        {trait}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* View all critters link */}
+                {revealStage >= 3 && (
+                  <button
+                    onClick={() => setShowAllCritters(true)}
+                    className="mt-6 text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                  >
+                    See all 16 critter types →
+                  </button>
+                )}
               </div>
 
               {/* Spider Chart - shows after reveal */}
@@ -125,9 +165,17 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
         {/* Header - show different version for returning users */}
         <div className="text-center mb-10">
           {!isFirstCheckIn && healthType && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-gray-200 mb-4">
-              <span className="text-lg">{healthType.emoji}</span>
-              <span className="text-sm text-gray-600">{healthType.name}</span>
+            <div className="flex flex-col items-center mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-gray-200 mb-2">
+                <span className="text-lg">{healthType.critter || healthType.emoji}</span>
+                <span className="text-sm text-gray-600">{healthType.name}</span>
+              </div>
+              <button
+                onClick={() => setShowAllCritters(true)}
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
+              >
+                See all critter types
+              </button>
             </div>
           )}
           {(!isFirstCheckIn || !healthType) && (
@@ -190,27 +238,36 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
           </div>
         )}
 
-        {/* Dalton Curiosity Section */}
-        <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border border-gray-200 mb-8">
+        {/* Personalized Dalton Nudge Section */}
+        <div className={`rounded-2xl p-6 mb-8 border-2 ${healthType ? `bg-gradient-to-br ${healthType.bgLight} border-${healthType.color}-200` : 'bg-gradient-to-br from-violet-50 to-rose-50 border-violet-200'}`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-2xl">
-              🔬
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm">
+              {healthType?.critter || '🔬'}
             </div>
             <div className="flex-1">
-              <h3 className="font-medium text-gray-800 mb-2">
-                Curious about what's happening inside?
+              <h3 className="font-semibold text-gray-800 mb-2">
+                A gentle nudge from your critter
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Your companions show your current experience. Some patterns connect to signals
-                in your body that aren't always visible — like nutrient levels, hormones, and
-                inflammation markers.
-              </p>
+              {healthType?.nudge ? (
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                  {healthType.nudge}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-600 mb-4">
+                  Your companions show your current experience. Some patterns connect to signals
+                  in your body that aren't always visible — like nutrient levels, hormones, and
+                  inflammation markers.
+                </p>
+              )}
               <button
                 onClick={onExploreBlood}
-                className="text-sm font-medium text-gray-800 underline hover:text-gray-600 transition-colors"
+                className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-all hover:shadow-lg"
               >
-                Explore with Dalton Personal Blood Test →
+                Explore Dalton Blood Test
               </button>
+              <p className="mt-3 text-xs text-gray-400 italic">
+                Optional • No pressure • Just insight
+              </p>
             </div>
           </div>
         </div>
@@ -256,6 +313,14 @@ export default function Dashboard({ responses, healthType, isFirstCheckIn, onVie
           <ShareButton companions={sorted} />
         </div>
       </div>
+
+      {/* All Critters Modal */}
+      {showAllCritters && (
+        <AllCritters
+          userType={healthType}
+          onClose={() => setShowAllCritters(false)}
+        />
+      )}
     </div>
   );
 }
